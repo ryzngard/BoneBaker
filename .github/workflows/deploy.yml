@@ -14,10 +14,10 @@ jobs:
      - name: Publish Blazor App
        run: dotnet publish BoneBaker.csproj -c Release -o release
      - name: Rewrite base href
-       uses: SteveSandersonMS/ghaction-rewrite-base-href@<SHA>
+       uses: SteveSandersonMS/ghaction-rewrite-base-href@v1.1.0
        with:
          base_href: /BoneBaker/
-         path: release/wwwroot
+         html_path: wwwroot/index.html
      - name: Deploy to GitHub Pages
        uses: peaceiris/actions-gh-pages@v3
        with:

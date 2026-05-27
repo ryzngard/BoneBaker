@@ -17,7 +17,7 @@ jobs:
        uses: SteveSandersonMS/ghaction-rewrite-base-href@v1.1.0
        with:
          base_href: /BoneBaker/
-         html_path: wwwroot/index.html
+         html_path: release/wwwroot/index.html
      - name: Deploy to GitHub Pages
        uses: peaceiris/actions-gh-pages@v3
        with:

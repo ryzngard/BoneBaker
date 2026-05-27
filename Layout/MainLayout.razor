@@ -1,0 +1,24 @@
+﻿@inherits LayoutComponentBase
+
+<div class="site-layout">
+    <header class="site-header">BoneBaker</header>
+
+    <div class="main">
+        <NavMenu />
+        <main class="body-content">
+            <ErrorBoundary>
+                <ChildContent>
+                    <div class="content">
+                        @Body
+                    </div>
+                </ChildContent>
+                <ErrorContent Context="ex">
+                    <div class="blazor-error-boundary">@ex.Message</div>
+                </ErrorContent>
+            </ErrorBoundary>
+        </main>
+    </div>
+
+    <footer class="site-footer">
+    </footer>
+</div>

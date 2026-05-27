@@ -1,0 +1,149 @@
+@page "/create"
+@using BoneBaker.Data
+@inject LocalStorageService StorageService
+@inject NavigationManager Navigation
+
+<div class="form-container" style="max-width:920px;margin:0 auto;padding:24px;">
+  <h1>Create Character</h1>
+
+  <EditForm EditContext="editContext" OnValidSubmit="SaveCharacter">
+    <div class="form-stack" style="display:flex;flex-direction:column;gap:20px;">
+      <div class="form-row" style="display:flex;gap:20px;">
+        <div class="form-column" style="flex:1;min-width:280px;display:flex;flex-direction:column;gap:12px;">
+          <label>Name <input class="input" @bind="Character.Name" placeholder="Enter character name" /></label>
+          <ValidationMessage For="() => Character.Name" />
+
+          <label>Gender <input class="input" @bind="Character.Gender" placeholder="Enter gender" /></label>
+          <ValidationMessage For="() => Character.Gender" />
+
+          <label>XP <InputNumber class="input" @bind-Value="Character.XP" /></label>
+          <label>Scratch <InputNumber class="input" @bind-Value="Character.Scratch" /></label>
+          <label>N Index <InputNumber class="input" @bind-Value="Character.NIndex" /></label>
+        </div>
+      </div>
+
+      <div class="form-column" style="flex:1;min-width:280px;display:flex;flex-direction:column;gap:12px;">
+        <div>
+            <h2>Style</h2>
+            <div style="display:flex;gap:16px;">
+              <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+                <div>
+                  <label>Tough <EnumSelector TEnum="Die" @bind-Value="Character.Style.Tough" Label="" /></label>
+                  <ValidationMessage For="() => Character.Style.Tough" />
+                </div>
+                <div>
+                  <label>Quick <EnumSelector TEnum="Die" @bind-Value="Character.Style.Quick" Label="" /></label>
+                  <ValidationMessage For="() => Character.Style.Quick" />
+                </div>
+                <div>
+                  <label>Cool <EnumSelector TEnum="Die" @bind-Value="Character.Style.Cool" Label="" /></label>
+                  <ValidationMessage For="() => Character.Style.Cool" />
+                </div>
+              </div>
+
+              <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+                <div>
+                  <label>Planner <EnumSelector TEnum="Die" @bind-Value="Character.Style.Planner" Label="" /></label>
+                  <ValidationMessage For="() => Character.Style.Planner" />
+                </div>
+                <div>
+                  <label>Techie <EnumSelector TEnum="Die" @bind-Value="Character.Style.Techie" Label="" /></label>
+                  <ValidationMessage For="() => Character.Style.Techie" />
+                </div>
+              </div>
+            </div>
+        </div>
+      </div>
+
+      <div class="panel" style="padding:20px;border:1px solid rgba(255,255,255,0.03);border-radius:8px;">
+        <div style="display:flex;gap:18px;flex-direction:column;">
+          <h2>Training</h2>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <div style="flex:1;min-width:160px;">
+              <label>Awareness <EnumSelector TEnum="Die" @bind-Value="Character.Training.Awareness" Label="" /></label>
+              <ValidationMessage For="() => Character.Training.Awareness" />
+            </div>
+            <div style="flex:1;min-width:160px;">
+              <label>Combat <EnumSelector TEnum="Die" @bind-Value="Character.Training.Combat" Label="" /></label>
+              <ValidationMessage For="() => Character.Training.Combat" />
+            </div>
+            <div style="flex:1;min-width:160px;">
+              <label>Education <EnumSelector TEnum="Die" @bind-Value="Character.Training.Education" Label="" /></label>
+              <ValidationMessage For="() => Character.Training.Education" />
+            </div>
+            <div style="flex:1;min-width:160px;">
+              <label>Fitness <EnumSelector TEnum="Die" @bind-Value="Character.Training.Fitness" Label="" /></label>
+              <ValidationMessage For="() => Character.Training.Fitness" />
+            </div>
+            <div style="flex:1;min-width:160px;">
+              <label>Hardware <EnumSelector TEnum="Die" @bind-Value="Character.Training.Hardware" Label="" /></label>
+              <ValidationMessage For="() => Character.Training.Hardware" />
+            </div>
+            <div style="flex:1;min-width:160px;">
+              <label>Medicine <EnumSelector TEnum="Die" @bind-Value="Character.Training.Medicine" Label="" /></label>
+              <ValidationMessage For="() => Character.Training.Medicine" />
+            </div>
+            <div style="flex:1;min-width:160px;">
+              <label>Social <EnumSelector TEnum="Die" @bind-Value="Character.Training.Social" Label="" /></label>
+              <ValidationMessage For="() => Character.Training.Social" />
+            </div>
+            <div style="flex:1;min-width:160px;">
+              <label>Software <EnumSelector TEnum="Die" @bind-Value="Character.Training.Software" Label="" /></label>
+              <ValidationMessage For="() => Character.Training.Software" />
+            </div>
+            <div style="flex:1;min-width:160px;">
+              <label>Subtlety <EnumSelector TEnum="Die" @bind-Value="Character.Training.Subtlety" Label="" /></label>
+              <ValidationMessage For="() => Character.Training.Subtlety" />
+            </div>
+            <div style="flex:1;min-width:160px;">
+              <label>Vehicles <EnumSelector TEnum="Die" @bind-Value="Character.Training.Vehicles" Label="" /></label>
+              <ValidationMessage For="() => Character.Training.Vehicles" />
+            </div>
+          </div>
+
+          <div style="margin-top:12px;">
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              @foreach (var s in Character.Training.AdditionalStats)
+              {
+                <div class="chip">@s.Name (@s.Die)<button type="button" class="btn-small" title="Remove" @onclick="() => RemoveTrainingAdditional(s)">x</button></div>
+              }
+            </div>
+
+           @*  <div style="display:flex;gap:12px;align-items:center;margin-top:12px;">
+              <input class="input" placeholder="Name" @bind="newTrainingName" />
+              <EnumSelector TEnum="Die" @bind-Value="newTrainingDie" />
+              <button type="button" class="btn" @onclick="AddTrainingStat">Add Training Stat</button>
+            </div> *@
+          </div>
+          @if (!string.IsNullOrEmpty(newTrainingError))
+          {
+            <div class="validation-message">@newTrainingError</div>
+          }
+
+          <h2 style="margin-top:18px;">Knowledge</h2>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;">
+            @foreach (var s in Character.Knowledge.Stats)
+            {
+              <div class="chip">@s.Name (@s.Die) <button type="button" class="btn-small" @onclick="() => RemoveKnowledgeStat(s)">x</button></div>
+            }
+          </div>
+          <div style="display:flex;gap:12px;align-items:center;margin-top:12px;">
+            <input class="input" placeholder="Name" @bind="newKnowledgeName" />
+            <EnumSelector TEnum="Die" @bind-Value="newKnowledgeDie" />
+            <button type="button" class="btn" @onclick="AddKnowledgeStat">Add Knowledge</button>
+          </div>
+          @if (!string.IsNullOrEmpty(newKnowledgeError))
+          {
+            <div class="validation-message">@newKnowledgeError</div>
+          }
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;justify-content:flex-end;">
+        <button type="button" class="btn" @onclick="Cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </div>
+    </div>
+  </EditForm>
+</div>
+

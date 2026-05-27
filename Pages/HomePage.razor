@@ -1,0 +1,50 @@
+﻿@page "/"
+@using BoneBaker.Data
+@inject LocalStorageService StorageService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Home</PageTitle>
+
+<h1>Welcome to Bone Baker, you're 1 stop shop for characters in NeoNeuro</h1>
+
+Select a character below or <button class="btn btn-primary" @onclick="CreateNew">Create a New Character</button>
+<button class="btn btn-primary" @onclick="Clear">Clear</button>
+
+<ul>
+  @foreach (var character in Characters)
+  {
+    <li>
+      <a href="@($"/Character/{character.Identifier}")">@character.Name</a>
+    </li>
+  }
+</ul>
+
+@code {
+
+  public Data.Character[] Characters { get; set; } = [];
+
+
+  protected override async Task OnInitializedAsync()
+  {
+    try
+    {
+      Characters = await StorageService.GetCharactersAsync();
+    }
+    catch
+    {
+      Characters = [];
+    }
+  }
+
+
+  private void CreateNew()
+  {
+    NavigationManager.NavigateTo("/create");
+  }
+
+  private async Task Clear()
+  {
+    await StorageService.ClearAsync();
+    Characters = [];
+  }
+}

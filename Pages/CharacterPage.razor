@@ -1,0 +1,210 @@
+@page "/character/{Identifier:guid}"
+@using BoneBaker.Data
+@inject LocalStorageService StorageService
+@inject IJSRuntime JS
+
+@if (C is null)
+{
+  <p>No character found...</p>
+}
+else
+{
+  <h1>@C.Name</h1>
+
+  <div class="tabs">
+    <button class="tab-btn" @onclick="() => SelectTab(Tab.Roll)" disabled="@(_activeTab == Tab.Roll)">Roll</button>
+    <button class="tab-btn" @onclick="() => SelectTab(Tab.Details)" disabled="@(_activeTab == Tab.Details)">Details</button>
+  </div>
+
+  @if (_activeTab == Tab.Roll)
+  {
+    <div class="roller" style="margin-top:12px;">
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+        <div>
+          <label>Style</label>
+          <select class="select style-select" @bind="_selectedStyleName">
+            @foreach (var s in C.Style.AsDieStats())
+            {
+              <option value="@s.Name">@s.Name (@s.Die)</option>
+            }
+          </select>
+        </div>
+
+        <div>
+          <label>Knowledge</label>
+          <select class="select knowledge-select" @bind="_selectedKnowledgeName">
+            <option value="">(default d4)</option>
+            @foreach (var k in C.Knowledge.Stats)
+            {
+              <option value="@k.Name">@k.Name (@k.Die)</option>
+            }
+          </select>
+        </div>
+
+        <div>
+          <label>Training</label>
+          <select class="select training-select" @bind="_selectedTrainingName">
+            <option value="">(default d4)</option>
+            @foreach (var t in C.Training.AsDieStats())
+            {
+              <option value="@t.Name">@t.Name (@t.Die)</option>
+            }
+          </select>
+        </div>
+
+        <div>
+          <button class="btn" @onclick="Roll">Roll</button>
+        </div>
+      </div>
+
+      @if (_lastRoll is not null)
+      {
+        <div class="dice-display">
+          <div class="die @( _showPop ? "roll-pop" : string.Empty)">
+            <div class="label">@_lastRoll.Style.Name</div>
+            <div class="die-type">@_lastRoll.Style.Die</div>
+            <div class="value">@_lastRoll.StyleValue</div>
+          </div>
+
+          <div class="die @( _showPop ? "roll-pop" : string.Empty)">
+            <div class="label">@_lastRoll.Knowledge.Name</div>
+            <div class="die-type">@_lastRoll.Knowledge.Die</div>
+            <div class="value">@_lastRoll.KnowledgeValue</div>
+          </div>
+
+          <div class="die @( _showPop ? "roll-pop" : string.Empty)">
+            <div class="label">@_lastRoll.Training.Name</div>
+            <div class="die-type">@_lastRoll.Training.Die</div>
+            <div class="value">@_lastRoll.TrainingValue</div>
+          </div>
+
+          <div class="roll-total">@_lastRoll.Total</div>
+        </div>
+      }
+    </div>
+  }
+  else if (_activeTab == Tab.Details)
+  {
+    <div style="margin-top:12px;">
+      <h3>Details</h3>
+      <pre>@System.Text.Json.JsonSerializer.Serialize(C, new System.Text.Json.JsonSerializerOptions { WriteIndented = true })</pre>
+    </div>
+  }
+}
+
+@code
+{
+  [Parameter]
+  public Guid Identifier { get; set; }
+
+  public BoneBaker.Data.Character? C { get; set; }
+
+  private enum Tab { Roll, Details }
+  private Tab _activeTab = Tab.Roll;
+
+  private readonly Random _random = new();
+  private IJSObjectReference? _keyboardModule;
+  private DotNetObjectReference<Pages.CharacterPage>? _dotNetRef;
+
+  private string? _selectedStyleName;
+  private string? _selectedKnowledgeName;
+  private string? _selectedTrainingName;
+
+  private RollResult? _lastRoll;
+  private bool _showPop;
+
+  protected override async Task OnInitializedAsync()
+  {
+    C = await StorageService.TryGetCharacterAsync(Identifier);
+    if (C is not null)
+    {
+      // default selections
+      _selectedStyleName = C.Style.AsDieStats().FirstOrDefault()?.Name;
+    }
+  }
+
+  protected override async Task OnAfterRenderAsync(bool firstRender)
+  {
+    if (firstRender)
+    {
+      _dotNetRef = DotNetObjectReference.Create(this);
+      try
+      {
+        await JS.InvokeVoidAsync("_bb_keyboard.attach", _dotNetRef);
+      }
+      catch
+      {
+        // ignore if not available
+      }
+    }
+  }
+
+  private void SelectTab(Tab t)
+  {
+    _activeTab = t;
+  }
+
+  [JSInvokable]
+  public async Task OnSpacePressed()
+  {
+    if (_activeTab == Tab.Roll)
+    {
+      await Roll();
+    }
+  }
+
+  public async ValueTask DisposeAsync()
+  {
+    _dotNetRef?.Dispose();
+    // nothing to dispose for global attach
+    await Task.CompletedTask;
+  }
+
+  private async Task Roll()
+  {
+    if (C is null) return;
+
+    var styleStat = C.Style.AsDieStats().FirstOrDefault(s => s.Name == _selectedStyleName) ?? C.Style.AsDieStats().First();
+    var styleDie = styleStat.Die;
+
+    var knowledgeStat = C.Knowledge.Stats.FirstOrDefault(s => s.Name == _selectedKnowledgeName);
+    var knowledgeDie = knowledgeStat?.Die ?? Die.D4;
+
+    var trainingStat = C.Training.AsDieStats().FirstOrDefault(s => s.Name == _selectedTrainingName);
+    var trainingDie = trainingStat?.Die ?? Die.D4;
+
+    var styleVal = _random.Next(1, ((int)styleDie) + 1);
+    var knowledgeVal = _random.Next(1, ((int)knowledgeDie) + 1);
+    var trainingVal = _random.Next(1, ((int)trainingDie) + 1);
+
+    _lastRoll = new RollResult
+    (
+      styleStat,
+      knowledgeStat ?? new("Default", knowledgeDie),
+      trainingStat ?? new("Default", trainingDie),
+      styleVal,
+      knowledgeVal,
+      trainingVal,
+      styleVal + knowledgeVal + trainingVal
+    );
+
+    // trigger pop animation
+    _showPop = true;
+    StateHasChanged();
+    await Task.Delay(420);
+    _showPop = false;
+    StateHasChanged();
+  }
+
+  private record class RollResult
+  (
+    DieStat Style,
+    DieStat Knowledge,
+    DieStat Training,
+    int StyleValue,
+    int KnowledgeValue,
+    int TrainingValue,
+    int Total
+  );
+
+}

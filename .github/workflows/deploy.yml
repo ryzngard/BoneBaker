@@ -1,0 +1,25 @@
+name: Deploy Blazor to GitHub Pages
+on:
+ push:
+   branches: [ main ]
+jobs:
+ build-deploy:
+   runs-on: ubuntu-latest
+   steps:
+     - uses: actions/checkout@v4
+     - name: Setup .NET
+       uses: actions/setup-dotnet@v4
+       with:
+         dotnet-version: '10.0.x'
+     - name: Publish Blazor App
+       run: dotnet publish BoneBaker.csproj -c Release -o release
+     - name: Rewrite base href
+       uses: SteveSandersonMS/ghaction-rewrite-base-href@<SHA>
+       with:
+         base_href: /BoneBaker/
+         path: release/wwwroot
+     - name: Deploy to GitHub Pages
+       uses: peaceiris/actions-gh-pages@v3
+       with:
+         github_token: ${{ secrets.GITHUB_TOKEN }}
+         publish_dir: release/wwwroot
